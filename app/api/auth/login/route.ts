@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { sign } from 'jsonwebtoken'
+import { generateToken } from '@/lib/auth'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key'
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
+
+    console.log('🔍 登录API - 开始登录流程')
 
     // 查找用户
     const user = await prisma.user.findUnique({
@@ -21,25 +23,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 验证密码（实际应用中应该使用加密比较）
-    if (user.password !== password) {
+    // 验证密码
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+    if (!isPasswordValid) {
       return NextResponse.json(
         { success: false, message: '密码错误' },
         { status: 401 }
       )
     }
 
-    // 生成JWT token
-    const token = sign(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        role: user.role,
-        name: user.name 
-      },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    )
+    // 生成JWT token - 使用auth库的generateToken函数
+    const userForToken = {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name || ''
+    }
+    
+    const token = generateToken(userForToken)
+    console.log('🔍 登录API - 生成的token:', token.substring(0, 50) + '...')
 
     // 设置cookie
     const response = NextResponse.json({
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // 设置HTTP-only cookie
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

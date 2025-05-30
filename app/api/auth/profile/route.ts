@@ -7,7 +7,11 @@ const prisma = new PrismaClient()
 // 获取当前用户信息
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Profile API - JWT_SECRET:', process.env.JWT_SECRET)
+    console.log('🔍 Profile API - Authorization header:', request.headers.get('authorization'))
+    
     const user = getUserFromRequest(request)
+    console.log('🔍 Profile API - 解析的用户信息:', user)
     
     if (!user) {
       return NextResponse.json(
@@ -23,6 +27,8 @@ export async function GET(request: NextRequest) {
         email: true,
         name: true,
         role: true,
+        phone: true,
+        avatar: true,
         createdAt: true
       }
     })
@@ -60,7 +66,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name } = body
+    const { name, phone, avatar } = body
 
     // 验证数据
     if (!name || name.trim().length === 0) {
@@ -70,17 +76,22 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // 构建更新数据
+    const updateData: any = { name }
+    if (phone !== undefined) updateData.phone = phone
+    if (avatar !== undefined) updateData.avatar = avatar
+
     // 更新用户信息
     const updatedUser = await prisma.user.update({
       where: { id: user.userId },
-      data: {
-        name
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
+        phone: true,
+        avatar: true,
         createdAt: true
       }
     })

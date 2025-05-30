@@ -99,18 +99,19 @@ export async function POST(request: NextRequest) {
     let finalLevelId = levelId
     if (!finalLevelId) {
       const defaultLevel = await prisma.memberLevel.findFirst({
-        where: { isDefault: true }
+        where: { name: '基础会员' }
       })
       
       if (!defaultLevel) {
-        // 如果没有默认等级，创建一个
+        // 如果没有基础会员等级，创建一个
         const newLevel = await prisma.memberLevel.create({
           data: {
-            name: '普通会员',
-            discount: 0.95,
-            pointsRatio: 1,
-            isDefault: true,
-            description: '默认会员等级'
+            name: '基础会员',
+            membershipFee: 0,
+            maxUsers: 1,
+            maxProducts: 50,
+            maxOrders: 500,
+            description: '免费基础会员等级'
           }
         })
         finalLevelId = newLevel.id

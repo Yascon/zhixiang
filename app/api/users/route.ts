@@ -13,6 +13,7 @@ export const GET = requireAuth('ADMIN')(async function(request: NextRequest) {
         email: true,
         name: true,
         role: true,
+        phone: true,
         createdAt: true
       },
       orderBy: { createdAt: 'desc' }
@@ -35,7 +36,7 @@ export const GET = requireAuth('ADMIN')(async function(request: NextRequest) {
 export const POST = requireAuth('ADMIN')(async function(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, password, role } = body
+    const { name, email, password, role, phone } = body
 
     // 检查邮箱是否已存在
     const existingUser = await prisma.user.findUnique({
@@ -55,13 +56,15 @@ export const POST = requireAuth('ADMIN')(async function(request: NextRequest) {
         name,
         email,
         password, // 实际应用中应该使用bcrypt等加密
-        role
+        role,
+        phone
       },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
+        phone: true,
         createdAt: true
       }
     })
