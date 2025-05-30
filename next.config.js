@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 生产环境优化
-  output: 'standalone',
-  
   // 图片配置
   images: {
     domains: ['localhost'],
