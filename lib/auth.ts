@@ -164,6 +164,9 @@ export function withRole(requiredRole: string) {
   }
 }
 
+// 添加requireAuth函数，这是withRole的别名
+export const requireAuth = withRole
+
 // 角色定义
 export const ROLES = {
   USER: 'USER',       // 普通用户
