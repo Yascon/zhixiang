@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { getUserFromRequest } from '@/lib/auth'
 
 const prisma = new PrismaClient()
 
@@ -56,65 +57,78 @@ export async function GET(request: NextRequest) {
 // 创建新会员
 export async function POST(request: NextRequest) {
   try {
+    const user = getUserFromRequest(request)
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: '未登录' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { name, phone, email, levelId } = body
+
+    // 验证必填字段
+    if (!name) {
+      return NextResponse.json(
+        { success: false, message: '会员姓名不能为空' },
+        { status: 400 }
+      )
+    }
 
     // 检查手机号是否已存在
     if (phone) {
       const existingMember = await prisma.member.findUnique({
         where: { phone }
       })
-
+      
       if (existingMember) {
         return NextResponse.json(
-          { success: false, message: '手机号已存在' },
+          { success: false, message: '该手机号已被注册' },
           { status: 400 }
         )
       }
-    }
-
-    // 验证会员等级是否存在
-    const memberLevel = await prisma.memberLevel.findUnique({
-      where: { id: levelId }
-    })
-    
-    let finalLevelId = levelId
-    if (!memberLevel) {
-      // 如果指定的等级不存在，创建默认等级或使用第一个等级
-      let defaultLevel = await prisma.memberLevel.findFirst()
-      if (!defaultLevel) {
-        // 创建默认会员等级
-        defaultLevel = await prisma.memberLevel.create({
-          data: {
-            name: '普通会员',
-            description: '默认会员等级',
-            membershipFee: 0
-          }
-        })
-      }
-      finalLevelId = defaultLevel.id
     }
 
     // 生成会员编号
     const memberCount = await prisma.member.count()
     const memberNo = `M${String(memberCount + 1).padStart(6, '0')}`
 
-    // 获取默认用户ID（临时使用，后续会实现用户权限系统）
-    let defaultUserId = 'default-user'
-    const existingUser = await prisma.user.findFirst()
-    if (existingUser) {
-      defaultUserId = existingUser.id
-    } else {
-      // 创建默认用户
-      const defaultUser = await prisma.user.create({
-        data: {
-          email: 'admin@example.com',
-          password: 'admin123',
-          role: 'ADMIN',
-          name: '系统管理员'
-        }
+    // 获取默认会员等级
+    let finalLevelId = levelId
+    if (!finalLevelId) {
+      const defaultLevel = await prisma.memberLevel.findFirst({
+        where: { isDefault: true }
       })
-      defaultUserId = defaultUser.id
+      
+      if (!defaultLevel) {
+        // 如果没有默认等级，创建一个
+        const newLevel = await prisma.memberLevel.create({
+          data: {
+            name: '普通会员',
+            discount: 0.95,
+            pointsRatio: 1,
+            isDefault: true,
+            description: '默认会员等级'
+          }
+        })
+        finalLevelId = newLevel.id
+      } else {
+        finalLevelId = defaultLevel.id
+      }
+    }
+
+    // 验证用户是否存在
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.userId }
+    })
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { success: false, message: '当前用户不存在' },
+        { status: 400 }
+      )
     }
 
     // 计算会员到期时间
@@ -130,7 +144,7 @@ export async function POST(request: NextRequest) {
         levelId: finalLevelId,
         status: 'ACTIVE',
         membershipExpiry,
-        registeredBy: defaultUserId
+        registeredBy: user.userId
       },
       include: {
         level: true
