@@ -1,0 +1,314 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // 开发环境使用SQLite，生产环境使用PostgreSQL
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("USER") // ADMIN, MANAGER, USER
+  phone     String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  orders    Order[]
+  members   Member[]
+  
+  @@map("users")
+}
+
+// 商品分类表
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  parentId    String?
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // 关联关系
+  products Product[]
+  
+  @@map("categories")
+}
+
+// 商品表
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  sku         String   @unique
+  barcode     String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  
+  // 价格信息
+  costPrice     Float  // 成本价
+  sellingPrice  Float  // 销售价
+  memberPrice   Float? // 会员价
+  
+  // 库存信息
+  stock         Int    @default(0)
+  minStock      Int    @default(0) // 最低库存预警
+  maxStock      Int?   // 最高库存
+  
+  // 商品状态
+  status        String @default("ACTIVE") // ACTIVE, INACTIVE, DISCONTINUED
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+  
+  @@map("products")
+}
+
+// 供应商表
+model Supplier {
+  id          String  @id @default(cuid())
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  orders Order[]
+  
+  @@map("suppliers")
+}
+
+// 客户表
+model Customer {
+  id          String  @id @default(cuid())
+  name        String
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  company     String? // 公司名称
+  taxNumber   String? // 税号
+  creditLevel String? // 信用等级: A, B, C, D
+  status      String  @default("ACTIVE") // ACTIVE, INACTIVE
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  orders Order[]
+  
+  @@map("customers")
+}
+
+// 订单表（包含采购订单和销售订单）
+model Order {
+  id         String      @id @default(cuid())
+  orderNo    String      @unique
+  type       String      // PURCHASE, SALE, RETURN
+  status     String      @default("PENDING") // PENDING, CONFIRMED, SHIPPED, COMPLETED, CANCELLED
+  
+  // 客户/供应商信息
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  memberId   String?
+  member     Member?   @relation(fields: [memberId], references: [id])
+  
+  // 订单金额
+  totalAmount Float
+  paidAmount  Float @default(0)
+  
+  // 订单日期
+  orderDate DateTime @default(now())
+  
+  // 操作员
+  userId    String
+  user      User   @relation(fields: [userId], references: [id])
+  
+  // 备注
+  notes     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  orderItems OrderItem[]
+  payments   Payment[]
+  
+  @@map("orders")
+}
+
+// 订单明细表
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  
+  quantity  Int
+  unitPrice Float
+  totalPrice Float
+  
+  createdAt DateTime @default(now())
+  
+  @@map("order_items")
+}
+
+// 库存变动记录表
+model StockMovement {
+  id        String            @id @default(cuid())
+  productId String
+  product   Product           @relation(fields: [productId], references: [id])
+  
+  type      String            // PURCHASE_IN, SALE_OUT, RETURN_IN, RETURN_OUT, ADJUST, TRANSFER
+  quantity  Int               // 正数为入库，负数为出库
+  reason    String?
+  
+  // 关联订单（如果是因订单产生的库存变动）
+  orderId   String?
+  
+  createdAt DateTime @default(now())
+  
+  @@map("stock_movements")
+}
+
+// 会员表（付费用户）
+model Member {
+  id          String       @id @default(cuid())
+  memberNo    String       @unique
+  name        String
+  phone       String?      @unique
+  email       String?
+  gender      String?      // MALE, FEMALE, OTHER
+  birthday    DateTime?
+  address     String?
+  company     String?      // 公司名称
+  
+  // 会员等级
+  levelId     String
+  level       MemberLevel  @relation(fields: [levelId], references: [id])
+  
+  // 会员状态
+  status      String       @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED, EXPIRED
+  
+  // 会员费信息
+  membershipFee     Float?   // 会员费金额
+  membershipExpiry  DateTime? // 会员到期时间
+  
+  // 注册信息
+  registeredBy String
+  registeredUser User @relation(fields: [registeredBy], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  orders         Order[]
+  membershipPayments MembershipPayment[]
+  
+  @@map("members")
+}
+
+// 会员等级表
+model MemberLevel {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  
+  // 会员费
+  membershipFee Float   // 年费
+  
+  // 权限和功能
+  maxUsers    Int     @default(1)    // 最大用户数
+  maxProducts Int     @default(100)  // 最大商品数
+  maxOrders   Int     @default(1000) // 最大订单数
+  features    String? // JSON格式的功能列表
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  members Member[]
+  
+  @@map("member_levels")
+}
+
+// 会员费支付记录表
+model MembershipPayment {
+  id          String            @id @default(cuid())
+  memberId    String
+  member      Member            @relation(fields: [memberId], references: [id])
+  
+  amount      Float
+  paymentDate DateTime          @default(now())
+  method      String            // CASH, CARD, ALIPAY, WECHAT, TRANSFER, OTHER
+  status      String            @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  
+  // 会员期限
+  startDate   DateTime
+  endDate     DateTime
+  
+  notes       String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("membership_payments")
+}
+
+// 支付记录表
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id])
+  
+  amount    Float
+  method    String        // CASH, CARD, ALIPAY, WECHAT, TRANSFER, OTHER
+  status    String        @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
+  
+  // 支付信息
+  transactionId String?
+  notes         String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("payments")
+}
+
+// 财务记录表
+model FinanceRecord {
+  id          String      @id @default(cuid())
+  type        String      // INCOME, EXPENSE
+  category    String      // 收支分类
+  amount      Float
+  description String?
+  
+  // 关联订单（如果是订单相关的收支）
+  orderId     String?
+  
+  recordDate  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  
+  @@map("finance_records")
+} 
