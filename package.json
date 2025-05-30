@@ -8,7 +8,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && prisma migrate deploy",
     "deploy:check": "node scripts/deployment-check.js",
     "deploy:build": "npm run build && npm run deploy:check",
     "deploy:docker": "docker-compose up -d --build",
