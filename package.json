@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "if [ \"$NODE_ENV\" = \"production\" ]; then cp prisma/schema.production.prisma prisma/schema.prisma; fi && prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate && prisma migrate deploy",
+    "postinstall": "if [ \"$NODE_ENV\" = \"production\" ]; then cp prisma/schema.production.prisma prisma/schema.prisma; fi && prisma generate && if [ \"$NODE_ENV\" = \"production\" ]; then prisma migrate deploy; fi",
     "deploy:check": "node scripts/deployment-check.js",
     "deploy:build": "npm run build && npm run deploy:check",
     "deploy:docker": "docker-compose up -d --build",
