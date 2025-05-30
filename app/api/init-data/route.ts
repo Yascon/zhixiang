@@ -4,8 +4,84 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+async function ensureTablesExist() {
+  console.log('检查并创建数据库表结构...')
+  
+  try {
+    // 使用Prisma的$executeRaw来确保表结构存在
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" TEXT NOT NULL,
+        "email" TEXT NOT NULL,
+        "name" TEXT,
+        "password" TEXT NOT NULL,
+        "role" TEXT NOT NULL DEFAULT 'USER',
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "avatar" TEXT,
+        "phone" TEXT,
+        CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+      );
+    `
+    
+    await prisma.$executeRaw`
+      CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
+    `
+    
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "categories" (
+        "id" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "description" TEXT,
+        "parentId" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "categories_pkey" PRIMARY KEY ("id")
+      );
+    `
+    
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "member_levels" (
+        "id" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "description" TEXT,
+        "membershipFee" DOUBLE PRECISION NOT NULL,
+        "maxUsers" INTEGER NOT NULL DEFAULT 1,
+        "maxProducts" INTEGER NOT NULL DEFAULT 100,
+        "maxOrders" INTEGER NOT NULL DEFAULT 1000,
+        "features" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "member_levels_pkey" PRIMARY KEY ("id")
+      );
+    `
+    
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "suppliers" (
+        "id" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "contactName" TEXT,
+        "phone" TEXT,
+        "email" TEXT,
+        "address" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "suppliers_pkey" PRIMARY KEY ("id")
+      );
+    `
+    
+    console.log('✅ 数据库表结构检查完成')
+  } catch (error) {
+    console.error('创建表结构失败:', error)
+    throw error
+  }
+}
+
 async function initializeData() {
   console.log('开始初始化生产环境数据...')
+
+  // 首先确保表结构存在
+  await ensureTablesExist()
 
   // 1. 创建默认管理员用户
   const existingAdmin = await prisma.user.findFirst({
