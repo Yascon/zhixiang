@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/db'
 import { generateToken } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,9 +37,10 @@ export async function POST(request: NextRequest) {
       role: user.role,
       name: user.name || ''
     }
+    console.log('🔍 登录API - User data for token generation:', userForToken);
     
     const token = generateToken(userForToken)
-    console.log('🔍 登录API - 生成的token:', token.substring(0, 50) + '...')
+    console.log('🔍 登录API - Generated token (first 50 chars):', token ? token.substring(0, 50) + '...' : 'undefined/empty');
 
     // 设置cookie
     const response = NextResponse.json({
