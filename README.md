@@ -239,4 +239,40 @@ MIT License
 
 ---
 
-**智享进销存管理系统** - 专业、高效、易用的企业级进销存解决方案 
+**智享进销存管理系统** - 专业、高效、易用的企业级进销存解决方案
+
+# 智享进销存管理系统 - Vercel部署指南
+
+## 环境变量（Vercel Settings > Environment Variables）
+
+```
+DATABASE_URL=postgresql://postgres:你的密码@你的主机:5432/postgres
+JWT_SECRET=你的32位以上强密码
+NODE_ENV=production
+NEXT_PUBLIC_SUPABASE_URL=（如有用到 Supabase 客户端）
+NEXT_PUBLIC_SUPABASE_ANON_KEY=（如有用到 Supabase 客户端）
+```
+
+## 一键初始化
+
+1. 部署成功后访问 `/api/init-data` 或 `/api/init` 完成数据库初始化。
+2. 默认管理员：admin@zhixiang.com / admin123
+
+## 本地开发
+
+```
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+npm start
+```
+
+## 生产部署
+
+1. 推送代码到 GitHub
+2. Vercel 自动构建并上线
+3. 首次访问初始化接口，修改默认密码
+
+---
+
+如遇问题请检查 Vercel 日志和环境变量配置。 

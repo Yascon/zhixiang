@@ -57,7 +57,8 @@ export async function GET(request: NextRequest) {
 // 创建新会员
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    // 修正：加 await
+    const user = await getUserFromRequest(request)
     
     if (!user) {
       return NextResponse.json(
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     // 验证用户是否存在
     const currentUser = await prisma.user.findUnique({
-      where: { id: user.userId }
+      where: { id: user.id }
     })
 
     if (!currentUser) {
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
         levelId: finalLevelId,
         status: 'ACTIVE',
         membershipExpiry,
-        registeredBy: user.userId
+        registeredBy: user.id
       },
       include: {
         level: true

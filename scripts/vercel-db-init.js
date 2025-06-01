@@ -49,13 +49,13 @@ async function main() {
     });
     
     if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await prisma.user.create({
+      const adminUser = await prisma.user.create({
         data: {
-          email: 'admin@zhixiang.com',
-          password: hashedPassword,
           name: '系统管理员',
-          role: 'ADMIN'
+          email: 'admin@example.com',
+          password: await bcrypt.hash('admin123', 10),
+          role: 'ADMIN',
+          phone: '13800138001'
         }
       });
       console.log('✅ 管理员用户创建成功');

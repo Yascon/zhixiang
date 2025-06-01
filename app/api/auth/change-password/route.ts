@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 // 修改密码
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    const user = await getUserFromRequest(request)
     
     if (!user) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     // 获取用户当前密码
     const currentUser = await prisma.user.findUnique({
-      where: { id: user.userId },
+      where: { id: user.id },
       select: { password: true }
     })
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     // 更新密码（实际应用中应该使用bcrypt加密）
     await prisma.user.update({
-      where: { id: user.userId },
+      where: { id: user.id },
       data: { password: newPassword }
     })
 

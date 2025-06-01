@@ -15,27 +15,39 @@ export async function POST(request: NextRequest) {
         data: [
           {
             name: '普通会员',
-            discount: 0,
-            minSpent: 0,
-            benefits: '基础会员权益'
+            description: '基础会员权益',
+            membershipFee: 0,
+            maxUsers: 1,
+            maxProducts: 100,
+            maxOrders: 1000,
+            features: '基础会员权益'
           },
           {
             name: '银卡会员',
-            discount: 5,
-            minSpent: 1000,
-            benefits: '5%折扣，生日优惠'
+            description: '5%折扣，生日优惠',
+            membershipFee: 299,
+            maxUsers: 3,
+            maxProducts: 200,
+            maxOrders: 2000,
+            features: '5%折扣，生日优惠'
           },
           {
             name: '金卡会员',
-            discount: 10,
-            minSpent: 5000,
-            benefits: '10%折扣，生日优惠，专属客服'
+            description: '10%折扣，生日优惠，专属客服',
+            membershipFee: 599,
+            maxUsers: 5,
+            maxProducts: 500,
+            maxOrders: 5000,
+            features: '10%折扣，生日优惠，专属客服'
           },
           {
             name: '钻石会员',
-            discount: 15,
-            minSpent: 10000,
-            benefits: '15%折扣，生日优惠，专属客服，优先配送'
+            description: '15%折扣，生日优惠，专属客服，优先配送',
+            membershipFee: 1299,
+            maxUsers: 10,
+            maxProducts: 1000,
+            maxOrders: 10000,
+            features: '15%折扣，生日优惠，专属客服，优先配送'
           }
         ]
       });

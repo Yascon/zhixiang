@@ -1,3 +1,22 @@
+# Vercel部署指南
+
+## 环境变量
+DATABASE_URL=postgresql://postgres:你的密码@你的主机:5432/postgres
+JWT_SECRET=你的32位以上强密码
+NODE_ENV=production
+NEXT_PUBLIC_SUPABASE_URL=（如有用到 Supabase 客户端）
+NEXT_PUBLIC_SUPABASE_ANON_KEY=（如有用到 Supabase 客户端）
+
+## 初始化
+- 部署后访问 `/api/init-data` 或 `/api/init` 初始化数据库
+- 默认管理员：admin@zhixiang.com / admin123
+
+## 本地开发
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+npm start
+
 # 智享进销存管理系统 - Vercel部署指南
 
 ## 🚀 部署状态

@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const currentUser = getUserFromRequest(request)
+    const currentUser = await getUserFromRequest(request)
     
     if (!currentUser) {
       return NextResponse.json(
