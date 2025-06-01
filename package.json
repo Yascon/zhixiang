@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "vercel-build": "cp prisma/schema.production.prisma prisma/schema.prisma && prisma generate && prisma migrate deploy && node scripts/vercel-db-init.js && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && node scripts/vercel-db-init.js && next build",
     "deploy:check": "node scripts/deployment-check.js",
     "deploy:build": "npm run build && npm run deploy:check",
     "deploy:docker": "docker-compose up -d --build",
